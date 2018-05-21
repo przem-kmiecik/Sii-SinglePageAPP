@@ -1,16 +1,14 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 import "./main.css";
-import $ from 'jquery'; 
 
 class ContactForm extends React.Component{
 
     state = {
-        name: 'First Name',
-        age: '0',
-        prefix: '-',
-        email : 'Your E-mail address',
+        name: 'Name',
+        age: '',
+        prefix: 'Mr',
+        email : 'E-mail address',
         nameCheck: '',
         ageCheck: '',
         emailCheck: '',
@@ -19,67 +17,43 @@ class ContactForm extends React.Component{
 
     handleSubmit = (e)=>{
        e.preventDefault()
-        
 
-    $(function(){
-        var $form = $('.sendJSON');
-        var $name = $('.get_name');
-        var $age = $('.get_age');
-        var $prefix = $('.get_prefix');
-        var $email = $('.get_email');
-        var url = 'http://localhost:3000/db';
+       function status(response) {
+        if (response.status >= 200 && response.status < 300) {
+          return Promise.resolve(response)
+        } else {
+          return Promise.reject(new Error(response.statusText))
+        }
+      }
 
+       function json(response) {
+        return response.json()
+      }
 
-        function sendJSON(name, age, prefix, email){
-            $.ajax({
-                url: url,
-                method: 'post',
-                dataType: 'json',
-                data : {
-                    name : name,
-                    age : age,
-                    prefix : prefix,
-                    email : email
-                }
-            }).done(function(res){
-                loadMovies();
-                console.log(res);
-            }).fail(function(error){
-                console.log(error);
-            });
-                
-            }
-
-        $sendJSON.on('submit', function(e){
-            e.preventDefault();
-        
-            var name = $name.val();
-            var age = $age.val();
-            var prefix = $prefix.val();
-            var email = $email.val();
-        
-            if(name !== '' && age > 0 && prefix !== '' && email !== ''){
-            sendJSON(name,age,prefix,email)
-            $name.val('');
-            $age.val('');
-            $prefix.val('');
-            $email.val('');
-            }
-        
-        });
-    });
-
+      
+       var url = 'http://localhost:3000/applications'; //Configurable endpoint
+       fetch(url, {
+        method: 'post',
+        headers: {
+          "Content-type": "application/x-www-form-urlencoded; charset=UTF-8"
+        },
+        body: 'name='+this.state.name+'&age='+this.state.age+'&prefix='+this.state.prefix+'&email='+this.state.email,
+      })
+      .then(json)
+      .then(function (data) {
+        console.log('Request succeeded with JSON response', data);
+      })
+      .catch(function (error) {
+        console.log('Request failed', error);
+      });
 
     this.setState({
             nameCheck: this.state.name.length <= 0 && 'Name field has to be filled.',
-            ageCheck: this.state.age.value <= 0 && 'Age has to be more than 0',
+            ageCheck: this.state.age.length <= 0 && 'Age has to be more than 0',
             emailCheck: this.state.email.search('@') <= 0 && 'Email field has to be filled and consist @',
-            readyToSubmit: this.state.name.length > 0 && this.state.email.search('@') > 0 ? `Thank you ${this.state.name} your entry has been submitted. za wiadomość. Wysłano do wydziału ${this.state.department}` : '',
+            readyToSubmit: this.state.name.length > 0 && this.state.age.length > 0 && this.state.email.search('@') > 0 ? `Success ${this.state.name} application has been sent` : '',
     })
     }
-    
-
-
 
     handleChange = e =>{
         this.setState({
@@ -106,59 +80,55 @@ class ContactForm extends React.Component{
     }
 
     clearForm = () => {
-        document.getElementById("form").reset(); 
+        document.getElementById("sendForm").reset(); 
         this.setState({
           name: "",
-          age: 0,
+          age: "",
           prefix: "Mr",
           email: "  "
         })
       }
 
+
+      
     render(){
+
+        const {name, age, prefix} = this.state;
+        const isEnabled = this.state.name.length > 0 && this.state.age.length > 0 && this.state.prefix.value !== '';
+
         return(
             <div>
+        
+           <span className="tooltip">{this.state.readyToSubmit}</span>
             
-           <p>{this.state.nameCheck}</p> 
-           <p>{this.state.ageCheck}</p>
-           <p>{this.state.emailCheck}</p>
-           <p style = {{color: 'green'}}>{this.state.readyToSubmit}</p>
-                <form onSubmit = {this.handleSubmit} class="sendJSON" id="form">
+                <form onSubmit = {this.handleSubmit} id="sendForm" className="send_JSON">
                 <h2>Sii Application</h2>
                 <img src="../img/logo.png"/>
-                <p type="Name:"><input onChange = {this.handleChange} value ={this.state.name} class="get_name"/></p>
+                    <p>Your Name</p>
+                    <span className="tooltip">{this.state.nameCheck}</span>
+                    <input onChange = {this.handleChange} value ={this.state.name} className="get_name"/>
                     <p>Your Age</p>
-                    <input onChange = {this.handleChange2} value ={this.state.age} type="number" min="0" max="100" class="get_age"/>
+                    <span className="tooltip">{this.state.ageCheck}</span>
+                    <input onChange = {this.handleChange2} value ={this.state.age} type="number" min="10" max="100" className="get_age"/>
                     <p>Your Prefix</p>
-                    <select onChange = {this.handleChange3} value = {this.state.prefix} class="get_prefix">
+                    <select onChange = {this.handleChange3} value = {this.state.prefix} className="get_prefix">
                     <option value = 'Mr'>Mr</option>
                     <option value = 'Ms'>Ms</option>
                     <option value = 'Mrs'>Mrs</option>
                     </select>
                     <p>Your Email</p>
-                    <input onChange = {this.handleChange4} value ={this.state.email} type='email' class="get_email"/>
+                    <span className="tooltip">{this.state.emailCheck}</span>
+                    <input onChange = {this.handleChange4} value ={this.state.email} type="email" className="get_email"/>
                     
-                    <button type="submit">Send</button>
-                    
+                    <button type="reset" onClick = {this.clearForm} name="clear">Clear</button>
+                    <button type="submit" name="send" disabled={!isEnabled}>Send</button>
                 </form>
-                <button onClick = {this.clearForm} >Clear</button>
+                
+        
             </div>
         )
     }
 }
-
-
-fetch('https://mywebsite.com/endpoint/', {
-  method: 'POST',
-  headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    firstParam: 'yourValue',
-    secondParam: 'yourOtherValue',
-  })
-})
 
 class App extends React.Component {
     render(){
